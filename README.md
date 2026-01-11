@@ -1,2 +1,141 @@
 # LAPORAN-KOKURIKULUM-SK-MORNI-POK
 TAPAK KHUSUS UNTUK LAPORAN KOKURIKULUM SKMP
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pelaporan Kokurikulum SK Morni Pok</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- html2pdf -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Dropbox Saver -->
+  <script src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="YOUR_DROPBOX_APP_KEY"></script>
+
+  <style>
+    .report-page { width: 210mm; min-height: 297mm; }
+  </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+<div class="max-w-5xl mx-auto bg-white shadow-lg rounded-xl p-6">
+  <h1 class="text-2xl font-bold text-center mb-6">PELAPORAN AKTIVITI KOKURIKULUM SK MORNI POK</h1>
+
+  <!-- Form Input -->
+  <div class="grid md:grid-cols-2 gap-4">
+    <input id="tarikh" type="date" class="border p-2 rounded" placeholder="Tarikh" />
+    <input id="masa" type="text" class="border p-2 rounded" placeholder="Masa" />
+    <input id="bil" type="number" class="border p-2 rounded" placeholder="Bil Kehadiran" />
+    <input id="tempat" type="text" class="border p-2 rounded" placeholder="Tempat" />
+    <input id="guru" type="text" class="border p-2 rounded md:col-span-2" placeholder="Nama Guru Penyelaras" />
+  </div>
+
+  <!-- Unit Dropdown -->
+  <h2 class="font-semibold mt-6 mb-2">Unit</h2>
+  <select id="unit" class="border p-2 rounded w-full">
+    <option value="">Pilih Unit</option>
+    <option>Pengakap</option>
+    <option>TKRS</option>
+    <option>Puteri Islam</option>
+    <option>Kelab Pencegahan Jenayah</option>
+    <option>Kelab Kelestarian</option>
+    <option>Kelab Simpanan Pendidikan</option>
+    <option>Kelab STEM</option>
+    <option>Kelab Doktor Muda</option>
+    <option>Sukan Hoki</option>
+    <option>Sukan Petanque</option>
+    <option>Sukan Olahraga</option>
+    <option>Sukan Bola Baling</option>
+  </select>
+
+  <!-- Aktiviti & Laporan -->
+  <div class="mt-4">
+    <input id="tajuk" type="text" class="border p-2 rounded w-full mb-2" placeholder="Tajuk Aktiviti" />
+    <textarea id="laporan" class="border p-2 rounded w-full mb-2" rows="6" placeholder="Laporan Aktiviti"></textarea>
+  </div>
+
+  <!-- Upload Gambar -->
+  <h2 class="font-semibold mt-6">Gambar Aktiviti (max 3, ≤2MB setiap satu)</h2>
+  <input type="file" id="images" multiple accept="image/*" class="border p-2 rounded w-full" />
+
+  <!-- Buttons -->
+  <div class="flex flex-wrap gap-3 mt-6">
+    <button onclick="generatePDF()" class="bg-blue-600 text-white px-4 py-2 rounded">Jana PDF</button>
+    <button onclick="saveToDropbox()" class="bg-indigo-600 text-white px-4 py-2 rounded">Simpan ke Dropbox</button>
+  </div>
+</div>
+
+<!-- Template PDF (Hidden) -->
+<div id="report" class="hidden">
+  <div class="report-page p-6 text-sm">
+    <h2 class="text-xl font-bold text-center mb-4">LAPORAN AKTIVITI SK MORNI POK</h2>
+    <p><b>Tarikh:</b> <span id="r_tarikh"></span> | <b>Masa:</b> <span id="r_masa"></span></p>
+    <p><b>Tempat:</b> <span id="r_tempat"></span></p>
+    <p><b>Bil Kehadiran:</b> <span id="r_bil"></span></p>
+    <p><b>Guru Penyelaras:</b> <span id="r_guru"></span></p>
+    <p><b>Unit:</b> <span id="r_unit"></span></p>
+    <hr class="my-2" />
+    <p><b>Tajuk Aktiviti</b><br><span id="r_tajuk"></span></p>
+    <p><b>Laporan</b><br><span id="r_laporan"></span></p>
+    <div id="r_images" class="grid grid-cols-3 gap-2 mt-4"></div>
+  </div>
+</div>
+
+<script>
+let pdfBlob;
+
+function generatePDF() {
+  document.getElementById('r_tarikh').innerText = tarikh.value;
+  document.getElementById('r_masa').innerText = masa.value;
+  document.getElementById('r_tempat').innerText = tempat.value;
+  document.getElementById('r_bil').innerText = bil.value;
+  document.getElementById('r_guru').innerText = guru.value;
+  document.getElementById('r_unit').innerText = unit.value;
+  document.getElementById('r_tajuk').innerText = tajuk.value;
+  document.getElementById('r_laporan').innerText = laporan.value;
+
+  const imgDiv = document.getElementById('r_images');
+  imgDiv.innerHTML = '';
+
+  [...images.files].slice(0,3).forEach(file => {
+    if(file.size <= 2097152){ // ≤2MB
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.className = 'w-full h-32 object-cover';
+      imgDiv.appendChild(img);
+    } else {
+      alert('Sila pilih gambar kurang atau sama dengan 2MB');
+    }
+  });
+
+  const opt = { margin: 5, filename: 'Laporan_SK_Morni_Pok.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4' } };
+
+  html2pdf().from(document.getElementById('report')).set(opt).outputPdf('blob').then(blob => {
+    pdfBlob = blob;
+    html2pdf().from(document.getElementById('report')).set(opt).save();
+  });
+}
+
+function saveToDropbox() {
+  if (!pdfBlob) { alert('Sila jana PDF dahulu'); return; }
+
+  const file = new File([pdfBlob], 'Laporan_SK_Morni_Pok.pdf', { type: 'application/pdf' });
+
+  Dropbox.save({
+    files: [{
+      url: URL.createObjectURL(file),
+      filename: file.name
+    }],
+    success: function () {
+      alert('PDF berjaya disimpan ke Dropbox unit berkaitan dan boleh diakses oleh PK Kokurikulum.');
+    }
+  });
+}
+</script>
+
+</body>
+</html>
